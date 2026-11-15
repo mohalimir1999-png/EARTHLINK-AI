@@ -9,6 +9,219 @@ st.set_page_config(
     page_icon="🌍",
     layout="wide"
 )
+st.markdown("""
+<style>
+.stApp {
+    background-color: #050B1E;
+    background-image:
+        radial-gradient(1px 1px at 20px 30px, #ffffff 90%, transparent),
+        radial-gradient(1px 1px at 110px 90px, #b8dfff 90%, transparent),
+        radial-gradient(2px 2px at 200px 170px, #ffffff 90%, transparent),
+        radial-gradient(1px 1px at 280px 50px, #ffffff 90%, transparent),
+        radial-gradient(1px 1px at 70px 210px, #8fc9ff 90%, transparent),
+        radial-gradient(ellipse at bottom, #132747, #050B1E 75%);
+    background-size: 320px 260px, 320px 260px, 320px 260px,
+                     320px 260px, 320px 260px, 100% 100%;
+}
+
+/* Independent twinkling star layers */
+/* Independent twinkling stars */
+/* 20 stars in three independently animated groups */
+.stApp::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+
+    background-image:
+       radial-gradient(3px 3px at 12% 18%, white 90%, transparent),
+        radial-gradient(2px 2px at 28% 42%, #a8d9ff 90%, transparent),
+        radial-gradient(3px 3px at 45% 12%, white 90%, transparent),
+        radial-gradient(2px 2px at 67% 28%, #c9eaff 90%, transparent),
+        radial-gradient(3px 3px at 82% 65%, white 90%, transparent),
+        radial-gradient(2px 2px at 18% 78%, #a8d9ff 90%, transparent),
+        radial-gradient(3px 3px at 52% 58%, white 90%, transparent);
+
+    filter: drop-shadow(0 0 3px #a8d9ff);
+    animation: twinkle 2.8s ease-in-out infinite;
+}
+
+/* Additional stars with a different rhythm */
+.stApp > header::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+
+    background-image:
+        radial-gradient(2px 2px at 8% 55%, white 90%, transparent),
+        radial-gradient(3px 3px at 35% 70%, #b9e2ff 90%, transparent),
+        radial-gradient(2px 2px at 59% 15%, white 90%, transparent),
+        radial-gradient(3px 3px at 76% 48%, white 90%, transparent),
+        radial-gradient(2px 2px at 93% 83%, #a8d9ff 90%, transparent),
+        radial-gradient(3px 3px at 41% 90%, white 90%, transparent),
+        radial-gradient(2px 2px at 88% 10%, #d5eeff 90%, transparent);
+
+    filter: drop-shadow(0 0 3px #a8d9ff);
+    animation: twinkle 4.3s ease-in-out infinite;
+}
+
+/* Third group of stars */
+.stApp > header::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+
+    background-image:
+        radial-gradient(3px 3px at 22% 12%, white 90%, transparent),
+        radial-gradient(2px 2px at 48% 36%, #a8d9ff 90%, transparent),
+        radial-gradient(3px 3px at 71% 82%, white 90%, transparent),
+        radial-gradient(2px 2px at 95% 38%, #c9eaff 90%, transparent),
+        radial-gradient(3px 3px at 14% 91%, white 90%, transparent),
+        radial-gradient(2px 2px at 63% 63%, #d5eeff 90%, transparent),
+radial-gradient(2px 2px at 31% 24%, #ffffff 90%, transparent),
+radial-gradient(3px 3px at 57% 79%, #a8d9ff 90%, transparent),
+radial-gradient(2px 2px at 86% 34%, #ffffff 90%, transparent),
+radial-gradient(3px 3px at 9% 68%, #c9eaff 90%, transparent);
+
+    filter: drop-shadow(0 0 3px #a8d9ff);
+    animation: twinkle 5.6s ease-in-out infinite;
+}
+
+/* Meteor 1 */
+.stApp::after {
+    content: "";
+    position: fixed;
+    top: 15%;
+    left: -180px;
+    width: 150px;
+    height: 2px;
+    pointer-events: none;
+    background: linear-gradient(90deg, transparent, #72c7ff, #ffffff);
+    box-shadow: 0 0 10px #69c9ff;
+    transform: rotate(-25deg);
+    animation: meteorOne 8s linear infinite;
+}
+/* Four delicate four-point stars */
+.stApp {
+    --star-cross:
+        radial-gradient(circle, #ffffff 0 1.5px, transparent 2px),
+        linear-gradient(
+            to right,
+            transparent,
+            #b8e4ff,
+            #ffffff,
+            #b8e4ff,
+            transparent
+        ),
+        linear-gradient(
+            to bottom,
+            transparent,
+            #b8e4ff,
+            #ffffff,
+            #b8e4ff,
+            transparent
+        );
+}
+
+@keyframes fourPointGlow {
+    0%, 100% { opacity: 0.35; }
+    50% { opacity: 1; }
+}
+/* Four glowing four-point stars */
+.stApp [data-testid="stMain"]::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+
+    background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 0L13.4 10.6L24 12L13.4 13.4L12 24L10.6 13.4L0 12L10.6 10.6Z' fill='%23ffffff'/%3E%3C/svg%3E"),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 0L13.4 10.6L24 12L13.4 13.4L12 24L10.6 13.4L0 12L10.6 10.6Z' fill='%23b8e4ff'/%3E%3C/svg%3E"),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 0L13.4 10.6L24 12L13.4 13.4L12 24L10.6 13.4L0 12L10.6 10.6Z' fill='%23ffffff'/%3E%3C/svg%3E"),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 0L13.4 10.6L24 12L13.4 13.4L12 24L10.6 13.4L0 12L10.6 10.6Z' fill='%239edcff'/%3E%3C/svg%3E");
+
+    background-position:
+        15% 25%,
+        72% 18%,
+        38% 72%,
+        85% 80%;
+
+    background-size:
+        15px 15px,
+        12px 12px,
+        17px 17px,
+        13px 13px;
+
+    background-repeat: no-repeat;
+    filter: drop-shadow(0 0 5px #8bd4ff);
+    animation: fourPointGlow 4s ease-in-out infinite;
+}
+/* Four additional tiny four-point stars */
+.stApp [data-testid="stMain"]::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+
+    background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 0L13.4 10.6L24 12L13.4 13.4L12 24L10.6 13.4L0 12L10.6 10.6Z' fill='%23ffffff'/%3E%3C/svg%3E"),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 0L13.4 10.6L24 12L13.4 13.4L12 24L10.6 13.4L0 12L10.6 10.6Z' fill='%23b8e4ff'/%3E%3C/svg%3E"),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 0L13.4 10.6L24 12L13.4 13.4L12 24L10.6 13.4L0 12L10.6 10.6Z' fill='%23ffffff'/%3E%3C/svg%3E"),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 0L13.4 10.6L24 12L13.4 13.4L12 24L10.6 13.4L0 12L10.6 10.6Z' fill='%239edcff'/%3E%3C/svg%3E");
+
+    background-position:
+        8% 55%,
+        58% 35%,
+        92% 48%,
+        27% 88%;
+
+    background-size:
+    12px 12px,
+    11px 11px,
+    13px 13px,
+    10px 10px;
+
+    background-repeat: no-repeat;
+    filter: drop-shadow(0 0 3px #8bd4ff);
+    animation: fourPointGlow 5s ease-in-out infinite;
+}
+
+@keyframes twinkle {
+    0%   { opacity: 0.05; }
+    20%  { opacity: 0.35; }
+    40%  { opacity: 1; }
+    55%  { opacity: 0.15; }
+    75%  { opacity: 0.9; }
+    100% { opacity: 0.05; }
+}
+
+@keyframes meteorOne {
+    0%, 65% {
+        transform: translate(0, 0) rotate(-25deg);
+        opacity: 0;
+    }
+    68% { opacity: 1; }
+    85% {
+        transform: translate(120vw, 35vh) rotate(-25deg);
+        opacity: 0;
+    }
+    100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .stApp::before,
+    .stApp::after {
+        animation: none;
+    }
+    .stApp::after { display: none; }
+}
+</style>
+""", unsafe_allow_html=True)
 def make_real_instruments_music(beat_times, instrument="Fusion", sample_rate=22050):
     from scipy.signal import resample_poly
     from math import gcd
@@ -106,6 +319,7 @@ def make_real_instruments_music(beat_times, instrument="Fusion", sample_rate=220
     wavfile.write(buffer, sample_rate, pcm)
 
     return buffer.getvalue()
+st.image("earthlink_logo.png", use_container_width=True)
 st.title("🌍 EARTHLINK-AI")
 st.subheader("Astronaut Health Monitoring & Emotional Support System")
 
