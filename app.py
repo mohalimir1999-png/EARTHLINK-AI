@@ -1,12 +1,111 @@
 
 import streamlit as st
-
+import io
+import numpy as np
+from pathlib import Path
+from scipy.io import wavfile
 st.set_page_config(
     page_title="EARTHLINK-AI",
     page_icon="🌍",
     layout="wide"
 )
+def make_real_instruments_music(beat_times, instrument="Fusion", sample_rate=22050):
+    from scipy.signal import resample_poly
+    from math import gcd
 
+    duration = 30.0
+    total = int(duration * sample_rate)
+    audio = np.zeros(total, dtype=np.float64)
+
+    sample_dir = Path(__file__).resolve().parent / "music_samples"
+
+    
+    harp_specs = [
+        ("373556_", 0.20),
+        ("373563_", 0.22),
+        ("373565_", 0.20),
+        ("373568_", 0.20),
+    ]
+
+    handpan_specs = [
+        ("587401_", 0.14),
+        ("587412_", 0.14),
+        ("587414_", 0.14),
+        ("587415_", 0.14),
+        ("587418_", 0.14),
+        ("692829_", 0.12),
+    ]
+
+    if instrument == "Harp":
+        sample_specs = harp_specs
+    elif instrument == "Handpan":
+        sample_specs = handpan_specs
+    else:
+        sample_specs = harp_specs + handpan_specs
+
+
+    samples = []
+
+    for prefix, volume in sample_specs:
+        matches = sorted(sample_dir.glob(prefix + "*.wav"))
+
+        if not matches:
+            raise FileNotFoundError(
+                f"Missing WAV sample beginning with {prefix}"
+            )
+
+        fs, sound = wavfile.read(str(matches[0]))
+        sound = np.asarray(sound, dtype=np.float64)
+
+        if sound.ndim == 2:
+            sound = sound.mean(axis=1)
+
+        peak = np.max(np.abs(sound))
+        if peak > 0:
+            sound = sound / peak
+
+        divisor = gcd(int(fs), sample_rate)
+        sound = resample_poly(
+            sound,
+            sample_rate // divisor,
+            int(fs) // divisor
+        )
+
+        peak = np.max(np.abs(sound))
+        if peak > 0:
+            sound = sound / peak
+
+        samples.append((sound, volume))
+
+    for i, beat_time in enumerate(beat_times):
+        start = int(float(beat_time) * sample_rate)
+
+        if start < 0 or start >= total:
+            continue
+
+        # Play real instrument samples at ECG heartbeat times.
+        sound, volume = samples[i % len(samples)]
+
+        length = min(len(sound), total - start)
+        if length <= 0:
+            continue
+
+        audio[start:start + length] += volume * sound[:length]
+
+    # Smooth beginning and ending.
+    fade = int(0.5 * sample_rate)
+    audio[:fade] *= np.linspace(0, 1, fade)
+    audio[-fade:] *= np.linspace(1, 0, fade)
+
+    peak = np.max(np.abs(audio))
+    if peak > 0:
+        audio = audio / peak * 0.85
+
+    pcm = (audio * 32767).astype(np.int16)
+    buffer = io.BytesIO()
+    wavfile.write(buffer, sample_rate, pcm)
+
+    return buffer.getvalue()
 st.title("🌍 EARTHLINK-AI")
 st.subheader("Astronaut Health Monitoring & Emotional Support System")
 
@@ -1074,6 +1173,12 @@ unified_volume = st.slider(
     key="unified_volume"
 )
 
+unified_instrument = st.selectbox(
+    "Choose Music for Your Memory",
+    ["Fusion", "Harp", "Handpan"],
+       key="unified_instrument"
+)
+
 if st.button(
     "❤️ Create Unified Memory",
     key="unified_create"
@@ -1083,11 +1188,26 @@ if st.button(
             unified_hr, 30
         )
 
-    st.session_state["unified_result"] = {
-        "sound": unified_sound,
-        "beats": unified_beats
-    }
+        music_choice = (
+            "Combined"
+            if unified_instrument == "Fusion"
+            else unified_instrument
+        )
 
+        unified_sound = make_real_instruments_music(
+            unified_beats,
+            music_choice
+        )
+
+        st.session_state["unified_result"] = {
+            "sound": unified_sound,
+            "beats": unified_beats
+        }
+unified_audio64 = ""
+unified_result = st.session_state.get(
+    "unified_result",
+    {"sound": b"", "beats": []}
+)
 if "unified_result" in st.session_state:
 
     unified_result = st.session_state["unified_result"]
@@ -1096,7 +1216,24 @@ if "unified_result" in st.session_state:
         unified_result["sound"]
     ).decode("ascii")
 
-    unified_photo_source = ""
+    
+unified_photo_source = ""
+
+default_mom_photo = (
+    Path(__file__).resolve().parent
+    / "demo_assets"
+    / "anastasia_ai.png"
+)
+
+if default_mom_photo.is_file():
+    default_mom_image64 = base64.b64encode(
+        default_mom_photo.read_bytes()
+    ).decode("ascii")
+
+    unified_photo_source = (
+        f"data:image/png;base64,{default_mom_image64}"
+    )
+
 
     if unified_photo is not None:
         unified_image64 = base64.b64encode(
@@ -1319,3 +1456,455 @@ st.caption(
     "Demonstration using simulated heartbeat data. "
     "No therapeutic effect has been established."
 )
+
+from pathlib import Path
+
+# Permanent demonstration assets
+demo_folder = Path(__file__).resolve().parent / "demo_assets"
+
+st.divider()
+st.header("🌍 Earth Circle — Demonstration")
+
+st.info(
+    "Concept demonstration: Earth Circle is a proposed future "
+    "private network for astronaut-approved family and friends. "
+    "The media below are illustrative examples, not real astronaut communications."
+)
+
+photo_path = demo_folder / "anastasia_ai.png"
+video_path = demo_folder / "demo_alex_message.mp4"
+
+st.subheader("📸 A Memory from Home")
+if photo_path.is_file():
+    st.image(str(photo_path), width=350)
+    st.caption("AI-generated illustrative image — fictional character Anastasia.")
+else:
+    st.warning("Demo image is not available.")
+
+st.subheader("🎥 A Message from a University Friend")
+if video_path.is_file():
+    st.video(str(video_path), width=350)
+    st.caption("Staged demonstration message from Alex, a university friend.")
+else:
+    st.warning("Demo video is not available.")
+
+
+# ============================================================
+# EARTHLINK-AI | Real ECG to Three Musical Interpretations
+# Data: PhysioNet MIT-BIH Arrhythmia Database, Record 100
+# Research demonstration only — not clinical therapy.
+# ============================================================
+
+import io
+import numpy as np
+import matplotlib.pyplot as plt
+import streamlit as st
+import wfdb
+from pathlib import Path
+from scipy.io import wavfile
+
+st.divider()
+st.header("💓 Heartbeat to Music — Real ECG Demonstration")
+
+st.info(
+    "This demonstration uses a real, anonymized research ECG "
+    "from PhysioNet (MIT-BIH Arrhythmia Database, Record 100). "
+    "It is NOT the heartbeat of an astronaut's family member."
+)
+
+@st.cache_data
+def load_ecg_demo():
+    path = Path(__file__).resolve().parent / "ecg_data" / "100"
+    record = wfdb.rdrecord(str(path))
+    annotations = wfdb.rdann(str(path), "atr")
+
+    fs = int(record.fs)
+    signal = record.p_signal[:, 0]
+
+    # Use the first 30 seconds.
+    duration = 30
+    segment = signal[:fs * duration]
+
+    # Beat positions are taken from expert annotations.
+    beats = np.asarray([
+        s for s, symbol in zip(
+            annotations.sample, annotations.symbol
+        )
+        if s < len(segment) and symbol in {"N", "L", "R", "A", "V", "F", "e", "j"}
+    ], dtype=int)
+
+    return fs, segment, beats
+
+def make_heartbeat_music(beat_times, style, sample_rate=22050):
+    duration = 30.0
+    total = int(duration * sample_rate)
+    audio = np.zeros(total, dtype=np.float64)
+
+    styles = {
+        "Calm Ambient": {
+            "notes": [220.00, 261.63, 329.63, 392.00],
+            "length": 1.4,
+            "volume": 0.22,
+        },
+        "Warm Piano-like": {
+            "notes": [261.63, 329.63, 392.00, 523.25],
+            "length": 0.65,
+            "volume": 0.30,
+        },
+        "Cosmic Pulse": {
+            "notes": [110.00, 164.81, 220.00, 329.63],
+            "length": 0.38,
+            "volume": 0.32,
+        },
+    }
+
+    cfg = styles[style]
+
+    for i, beat_time in enumerate(beat_times):
+        start = int(float(beat_time) * sample_rate)
+        if start >= total:
+            continue
+
+        length = min(
+            int(cfg["length"] * sample_rate),
+            total - start
+        )
+        if length <= 0:
+            continue
+
+        t = np.arange(length) / sample_rate
+        frequency = cfg["notes"][i % len(cfg["notes"])]
+
+        if style == "Calm Ambient":
+            tone = (
+                np.sin(2 * np.pi * frequency * t)
+                + 0.25 * np.sin(2 * np.pi * frequency * 2 * t)
+            )
+            envelope = np.minimum(t / 0.12, 1.0) * np.exp(-2.0 * t)
+
+        elif style == "Warm Piano-like":
+            tone = (
+                np.sin(2 * np.pi * frequency * t)
+                + 0.35 * np.sin(2 * np.pi * frequency * 2 * t)
+                + 0.12 * np.sin(2 * np.pi * frequency * 3 * t)
+            )
+            envelope = np.exp(-5.0 * t)
+
+        else:
+            tone = (
+                np.sin(2 * np.pi * frequency * t)
+                + 0.35 * np.sin(2 * np.pi * (frequency / 2) * t)
+            )
+            envelope = np.exp(-9.0 * t)
+
+        audio[start:start + length] += (
+            cfg["volume"] * tone * envelope
+        )
+
+    peak = np.max(np.abs(audio))
+    if peak > 0:
+        audio = audio / peak * 0.85
+
+    pcm = (audio * 32767).astype(np.int16)
+    buffer = io.BytesIO()
+    wavfile.write(buffer, sample_rate, pcm)
+    return buffer.getvalue()
+
+
+
+def make_real_instruments_music(beat_times, instrument="Fusion", sample_rate=22050):
+    from scipy.signal import resample_poly
+    from math import gcd
+
+    duration = 30.0
+    total = int(duration * sample_rate)
+    audio = np.zeros(total, dtype=np.float64)
+
+    sample_dir = Path(__file__).resolve().parent / "music_samples"
+
+    
+    harp_specs = [
+        ("373556_", 0.20),
+        ("373563_", 0.22),
+        ("373565_", 0.20),
+        ("373568_", 0.20),
+    ]
+
+    handpan_specs = [
+        ("587401_", 0.14),
+        ("587412_", 0.14),
+        ("587414_", 0.14),
+        ("587415_", 0.14),
+        ("587418_", 0.14),
+        ("692829_", 0.12),
+    ]
+
+    if instrument == "Harp":
+        sample_specs = harp_specs
+    elif instrument == "Handpan":
+        sample_specs = handpan_specs
+    else:
+        sample_specs = harp_specs + handpan_specs
+
+
+    samples = []
+
+    for prefix, volume in sample_specs:
+        matches = sorted(sample_dir.glob(prefix + "*.wav"))
+
+        if not matches:
+            raise FileNotFoundError(
+                f"Missing WAV sample beginning with {prefix}"
+            )
+
+        fs, sound = wavfile.read(str(matches[0]))
+        sound = np.asarray(sound, dtype=np.float64)
+
+        if sound.ndim == 2:
+            sound = sound.mean(axis=1)
+
+        peak = np.max(np.abs(sound))
+        if peak > 0:
+            sound = sound / peak
+
+        divisor = gcd(int(fs), sample_rate)
+        sound = resample_poly(
+            sound,
+            sample_rate // divisor,
+            int(fs) // divisor
+        )
+
+        peak = np.max(np.abs(sound))
+        if peak > 0:
+            sound = sound / peak
+
+        samples.append((sound, volume))
+
+    for i, beat_time in enumerate(beat_times):
+        start = int(float(beat_time) * sample_rate)
+
+        if start < 0 or start >= total:
+            continue
+
+        # Play real instrument samples at ECG heartbeat times.
+        sound, volume = samples[i % len(samples)]
+
+        length = min(len(sound), total - start)
+        if length <= 0:
+            continue
+
+        audio[start:start + length] += volume * sound[:length]
+
+    # Smooth beginning and ending.
+    fade = int(0.5 * sample_rate)
+    audio[:fade] *= np.linspace(0, 1, fade)
+    audio[-fade:] *= np.linspace(1, 0, fade)
+
+    peak = np.max(np.abs(audio))
+    if peak > 0:
+        audio = audio / peak * 0.85
+
+    pcm = (audio * 32767).astype(np.int16)
+    buffer = io.BytesIO()
+    wavfile.write(buffer, sample_rate, pcm)
+
+    return buffer.getvalue()
+
+
+try:
+    fs_ecg, ecg_signal, beat_samples = load_ecg_demo()
+    beat_times = beat_samples / fs_ecg
+
+    st.success("Real ECG successfully loaded from PhysioNet!")
+
+    st.subheader("1. Original ECG Signal")
+
+    # Display the first 10 seconds for clarity.
+    display_seconds = 10
+    display_count = fs_ecg * display_seconds
+    times = np.arange(display_count) / fs_ecg
+
+    fig, ax = plt.subplots(figsize=(11, 3))
+    ax.plot(
+        times,
+        ecg_signal[:display_count],
+        linewidth=0.9,
+        color="#1677b8"
+    )
+
+    visible_beats = beat_samples[
+        beat_samples < display_count
+    ]
+
+    ax.scatter(
+        visible_beats / fs_ecg,
+        ecg_signal[visible_beats],
+        color="#dc3545",
+        s=18,
+        label="Annotated heartbeats"
+    )
+
+    ax.set_xlabel("Time (seconds)")
+    ax.set_ylabel("ECG amplitude (mV)")
+    ax.set_title("Real ECG — MIT-BIH Record 100")
+    ax.legend()
+    ax.grid(alpha=0.2)
+
+    st.pyplot(fig)
+    plt.close(fig)
+
+    st.caption(
+        "Red markers indicate heartbeat positions from "
+        "the PhysioNet reference annotations."
+    )
+
+    st.subheader("2. Heartbeat Analysis")
+
+    rr_intervals = np.diff(beat_times)
+    if len(rr_intervals) > 0:
+        mean_hr = 60 / np.mean(rr_intervals)
+
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Heartbeats detected", len(beat_times))
+        col2.metric("Average heart rate", f"{mean_hr:.1f} bpm")
+        col3.metric(
+            "Mean RR interval",
+            f"{np.mean(rr_intervals):.3f} s"
+        )
+
+   
+        st.subheader("3. Real Instrument Music — ECG Rhythm")
+
+        st.write(
+            "Three musical versions using real harp and handpan samples. "
+            "Each note follows the heartbeat timing from the ECG."
+        )
+
+        for instrument in ["Harp", "Handpan", "Combined"]:
+            st.markdown(f"**🎵 Real {instrument}**")
+
+            wav_data = make_real_instruments_music(
+                beat_times, instrument
+            )
+
+            st.audio(wav_data, format="audio/wav")
+
+            st.download_button(
+                label=f"Download Real {instrument}",
+                data=wav_data,
+                file_name=f"EARTHLINK_AI_{instrument.lower()}.wav",
+                mime="audio/wav",
+                key=f"download_real_{instrument.lower()}"
+            )
+
+        
+    
+    
+        "Scientific note: ECG-derived musical mapping is "
+        "an exploratory sonification technique. No clinical "
+        "or psychological therapeutic effect is claimed. "
+        "Future personalized use would require consent, "
+        "privacy safeguards and controlled evaluation."
+    
+
+    st.markdown(
+        "Data source: [PhysioNet MIT-BIH Arrhythmia Database]"
+        "(https://physionet.org/content/mitdb/1.0.0/)"
+    )
+
+except Exception as exc:
+    st.error(f"ECG demonstration could not load: {exc}")
+
+# EARTH VOICES — Interactive two-way communication prototype
+st.divider()
+st.header("🌍 Earth Voices — Messages from Earth")
+
+st.write(
+    "A proposed, moderated connection between astronauts and "
+    "students, young researchers, and space enthusiasts worldwide. "
+    "Astronauts can read and reply whenever they choose."
+)
+
+st.info(
+    "Interactive demonstration only. All messages and senders are "
+    "fictional. No messages are transmitted to or from astronauts."
+)
+
+earth_messages = [
+    {
+        "sender": "Sara — Medical Student, Romania",
+        "message": (
+            "Your mission inspires me to study space medicine. "
+            "Thank you for showing us what is possible!"
+        ),
+    },
+    {
+        "sender": "Arman — High School Student, Iran",
+        "message": (
+            "My dream is to become an astronaut one day. "
+            "Watching your journey gives me hope!"
+        ),
+    },
+    {
+        "sender": "Mei — Space Science Student, Singapore",
+        "message": (
+            "Even from Earth, we are cheering for you. "
+            "Your work inspires the next generation of explorers!"
+        ),
+    },
+]
+
+selected_message = st.selectbox(
+    "Choose a message from Earth:",
+    range(len(earth_messages)),
+    format_func=lambda i: earth_messages[i]["sender"],
+    key="earth_voices_selection",
+)
+
+st.markdown(
+    f"**Message:** {earth_messages[selected_message]['message']}"
+)
+
+reply = st.text_area(
+    "Astronaut's optional reply (simulation):",
+    placeholder="Write a supportive reply...",
+    key=f"earth_voices_reply_{selected_message}",
+)
+
+if st.button("Preview Reply", key="earth_voices_preview"):
+    if reply.strip():
+        st.success("Reply preview — not actually sent.")
+        st.write(reply)
+    else:
+        st.warning("Write a reply first.")
+
+st.caption(
+    "Future concept: invitation or eligibility screening, content "
+    "moderation, astronaut-controlled message frequency, optional "
+    "asynchronous replies, consent, and communication safeguards."
+)
+
+# EARTH VOICES — Voice and video demonstrations
+st.subheader("🎙️ Voice & Video Messages from Earth")
+
+st.caption(
+    "Fictional demonstration content. "
+    "No real messages are sent to astronauts."
+)
+
+from pathlib import Path
+
+earth_voice_video = (
+    Path(__file__).resolve().parent
+    / "demo_assets"
+    / "earth_voices_sara.mp4"
+)
+
+st.markdown("**🎥 Example video message from Earth**")
+
+if earth_voice_video.is_file():
+    st.video(str(earth_voice_video), width=350)
+    st.caption("Staged demonstration video — fictional sender.")
+else:
+    st.warning("Example video is not available.")
+
